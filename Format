@@ -1,0 +1,1297 @@
+Sheets("List Bill Changes").Select
+
+Columns("G:G").Insert
+Columns("G:G").NumberFormat = "General"
+Lastrow = ActiveSheet.UsedRange.Rows(ActiveSheet.UsedRange.Rows.Count).Row
+If Lastrow < 4 Then
+    Onlyone = True
+Else: Onlyone = False
+End If
+Range("A1").Activate
+    If SSN = True Then
+        Columns("D:D").Select
+        Selection.Replace What:="-", Replacement:="", LookAt:=xlPart, _
+            SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, _
+            ReplaceFormat:=False, FormulaVersion:=xlReplaceFormula2
+        Application.CutCopyMode = False
+        
+        Columns("D:D").Select
+        Columns("D:D").NumberFormat = "000000000"
+    End If
+
+For x = 3 To Lastrow Step 1
+
+    If Cells(x, 4) <> "" Then
+        If SSN = True Then
+            Cells(x, 7) = "=VLOOKUP(RC[-3],ChangeCensus!C[-5],1,FALSE)"
+            Cells(x, 7) = Cells(x, 7).Value
+            If IsError(Cells(x, 7)) Then
+                Cells(x, 7) = "Not On Downloaded Census"
+                Rows(x).Copy
+                Sheets("NotOnCensus").Select
+                pastethisrow = ActiveSheet.UsedRange.Rows(ActiveSheet.UsedRange.Rows.Count).Row
+                Rows(pastethisrow + 1).PasteSpecial
+                Sheets("List Bill Changes").Select
+            End If
+        ElseIf EEID = True Then
+            Cells(x, 7) = "=VLOOKUP(RC[-1],ChangeCensus!C[-4],1,FALSE)"
+            Cells(x, 7) = Cells(x, 7).Value
+            If IsError(Cells(x, 7)) Then
+                Cells(x, 7) = "Not On Downloaded Census"
+                Rows(x).Copy
+                Sheets("NotOnCensus").Select
+                pastethisrow = ActiveSheet.UsedRange.Rows(ActiveSheet.UsedRange.Rows.Count).Row
+                Rows(pastethisrow + 1).PasteSpecial
+                Sheets("List Bill Changes").Select
+            End If
+        End If
+
+
+    End If
+
+Next x
+
+Rows("1:2").Copy
+Sheets("NotonCensus").Select
+Rows(1).Insert
+Rows(3).Delete
+Sheets("List Bill Changes").Select
+Columns("G:G").Delete
+
+Sheets("ChangeCensus").Select
+LastrowCC = ActiveSheet.UsedRange.Rows(ActiveSheet.UsedRange.Rows.Count).Row
+
+If SSN = True Then
+    For x = 2 To LastrowCC Step 1
+    Cells(x, 5) = "=VLOOKUP(RC[-3],'List Bill Changes'!C[-1],1,FALSE)"
+    Cells(x, 5) = Cells(x, 5).Value
+    'Clear contents for errors
+    If IsError(Cells(x, 5)) = True Then
+        Cells(x, 5) = ""
+    End If
+    
+    
+    Next x
+
+ElseIf EEID = True Then
+
+    For x = 2 To LastrowCC Step 1
+    Cells(x, 5) = "=VLOOKUP(RC[-1],'List Bill Changes'!C[1],1,FALSE)"
+    Cells(x, 5) = Cells(x, 5).Value
+    
+    Cells(x, 5).Activate
+    ActiveCell.NumberFormat = "@"
+    
+    'Clear contents for errors
+    If IsError(Cells(x, 5)) = True Then
+        Cells(x, 5) = ""
+    End If
+    
+    Next x
+
+End If
+
+For x = LastrowCC To 2 Step -1
+    If Cells(x, 5) <> "" Then
+ 
+    
+    Else
+        If Onlyone = True Then
+            If Cells(x, 1) = "E" And Cells(x - 1, 1) = "E" Then
+                If SSN = True Then
+                    If Cells(x, 2) <> "" Then
+                        Onlyone = False
+                        Rows(x).Select
+                            With Selection.Interior
+                                .Color = 65535
+                            End With
+                        GoTo gotonextX
+                    End If
+                ElseIf EEID = True Then
+                    If Cells(x, 3) <> "" Then
+                        Onlyone = False
+                        Rows(x).Select
+                            With Selection.Interior
+                                .Color = 65535
+                            End With
+                        GoTo gotonextX
+                    End If
+                End If
+            End If
+        End If
+        
+        Rows(x).Delete
+        LastrowCC = LastrowCC - 1
+        
+    End If
+
+gotonextX:
+Next x
+
+Sheets("List Bill Changes").Select
+
+If SSN = True Then
+    Columns("D:D").Cut
+    Columns("A:A").Insert Shift:=xlToRight
+ElseIf EEID = True Then
+    Columns("F:F").Cut
+    Columns("A:A").Insert Shift:=xlToRight
+End If
+    Sheets("ChangeCensus").Select
+
+    
+For x = LastrowCC To 2 Step -1
+    If Cells(x, 5) <> "" Then
+            If Cells(x, 1) = "E" Then
+        
+                'First Name Check
+                'iferror(VLOOKUP to pull First Name from List Bill Changes
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],7,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                'compare cell from change census to cell from list bill changes and update change census if different
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 8)) Then Cells(x, 8) = Trim(Cells(x, 5))
+                End If
+                'Last Name Check
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],8,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 7)) Then Cells(x, 7) = Trim(Cells(x, 5))
+                End If
+                'MI is not on the file
+                'DOB Check
+                Cells(x, 5).NumberFormat = Cells(x, 11).NumberFormat
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],9,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 11).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 11)) Then Cells(x, 11) = Trim(Cells(x, 5))
+                End If
+                'Marital Status
+                'Gender
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],10,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 13)) Then Cells(x, 13) = UCase(Left(Cells(x, 5), 1))
+                    
+                End If
+                
+                'Hire Date Check
+                
+                Cells(x, 5) = Format("=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],11,FALSE),"""")", "[$-en-US]dd-mmm-yyyy;@")
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 25).NumberFormat
+               
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 25)) Then Cells(x, 25) = Cells(x, 5)
+                End If
+                
+                'Occupation Check
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],12,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 35).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 35)) Then Cells(x, 35) = Trim(Cells(x, 5))
+                End If
+                
+                'Salary Check ' ADD FORMAT FOR GENERAL
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],13,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 27).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    'Update Salary
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 27)) Then
+                        Cells(x, 27) = Cells(x, 5)
+                        'Add Salary Basis
+                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[10],14,FALSE),"""")"
+                        Cells(x, 5) = Cells(x, 5).Value
+                        If Left(Cells(x, 5), 1) > 0 And Left(Cells(x, 5), 1) <> Trim(Cells(x, 28)) Then
+                            Cells(x, 29) = Left(Cells(x, 5), 1).Value
+                        End If
+                        'Add hours if hourly
+                        If Cells(x, 27) = "H" Then
+                            Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[11],15,FALSE),"""")"
+                            Cells(x, 5) = Cells(x, 5).Value
+                            If Cells(x, 5) > 0 Then Cells(x, 26) = Cells(x, 5).Value
+                        End If
+                        'Add Salary Effective Date
+                        Cells(x, 29) = Format("=iferror(VLOOKUP(RC[-27],'List Bill Changes'!C[-28]:C[-26],3,FALSE),"""")", "[$-en-US]dd-mmm-yyyy;@")
+                        Cells(x, 29) = Cells(x, 29).Value
+                    End If
+                End If
+                
+                'Smoker Status Check
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],16,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 14).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 14)) Then
+                        Cells(x, 14) = Cells(x, 5)
+                        Cells(x, 15) = "=iferror(VLOOKUP(RC[-13],'List Bill Changes'!C[-14]:C[-12],3,FALSE),"""")"
+                        Cells(x, 15) = Cells(x, 15).Value
+                    End If
+                End If
+                
+                    'Term Check
+                Cells(x, 5) = Format("=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],17,FALSE),"""")", "[$-en-US]dd-mmm-yyyy;@")
+                Cells(x, 5).NumberFormat = Cells(x, 23).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    Cells(x, 22) = "T"
+                    Cells(x, 23) = Trim(Cells(x, 5))
+                  
+                    If Cells(x, 36) <> "" Then Cells(x, 37) = Cells(x, 23)
+                    If Cells(x, 49) <> "" Then Cells(x, 50) = Cells(x, 23)
+                    If Cells(x, 62) <> "" Then Cells(x, 63) = Cells(x, 23)
+                    If Cells(x, 79) <> "" Then Cells(x, 80) = Cells(x, 23)
+                    If Cells(x, 92) <> "" Then Cells(x, 93) = Cells(x, 23)
+                    If Cells(x, 105) <> "" Then Cells(x, 106) = Cells(x, 23)
+                    If Cells(x, 118) <> "" Then Cells(x, 119) = Cells(x, 23)
+                    If Cells(x, 132) <> "" Then Cells(x, 133) = Cells(x, 23)
+                    If Cells(x, 146) <> "" Then Cells(x, 147) = Cells(x, 23)
+                    If Cells(x, 162) <> "" Then Cells(x, 163) = Cells(x, 23)
+                    If Cells(x, 176) <> "" Then Cells(x, 177) = Cells(x, 23)
+                    'CI
+                    If Cells(x, 270) <> "" Then Cells(x, 271) = Cells(x, 23)
+                    'ACC
+                    If Cells(x, 294) <> "" Then Cells(x, 295) = Cells(x, 23)
+                    'HI
+                    If Cells(x, 303) <> "" Then Cells(x, 304) = Cells(x, 23)
+                
+
+                    
+                End If
+                ''' WATCH AREA FORMAT ON CHANGE CENSUS DOES NOT MATCH LIST BILL CHANGES TEMPLATE so this clears the EMPLOYEE ADDRESS 2 field and populates all address info in EMPLOYEE ADDRESS'''
+                'Address Check
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],18,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 16).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 16)) Then
+                        Cells(x, 16) = Cells(x, 5)
+                        Cells(x, 17) = ""
+                    End If
+                End If
+                
+                'City Check
+                    
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],19,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 18).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 18)) Then Cells(x, 18) = Trim(Cells(x, 5))
+                End If
+                
+                'State Check
+                    
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],20,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 19).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 19)) Then Cells(x, 19) = Trim(Cells(x, 5))
+                End If
+                
+                'Zip Code Check
+                    
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],21,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 20).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 20)) Then Cells(x, 20) = Trim(Cells(x, 5))
+                End If
+                
+                'Country is not on the list bill template
+                
+                
+                '''Product Section
+                '''' The only fields we can populate are the ones on the List Bill Change file.  This means that ONLY
+                '''' Effective Date, Group Number, Class, and Term Date are updated for Disibility coverage
+                '''' Effective Date, Group Number, Class, Term Date, and Benefit amounts are updated for Life coverage
+                
+                '''''START HERE
+                
+               'Basic Life
+                 'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],22,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 118).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> Trim(Cells(x, 118)) Then Cells(x, 118) = Trim(Cells(x, 5))
+                
+                
+
+                'Group Number
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],24,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 120).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 120)) Then Cells(x, 120) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],25,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 122).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 122)) Then
+                        Cells(x, 122) = Cells(x, 5)
+                        Cells(x, 121).Interior.ColorIndex = 44
+                    End If
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],29,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 119).NumberFormat
+                Cells(x, 5) = Cells(x, 5).Value
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 119)) Then Cells(x, 119) = Format(Cells(x, 5), "[$-en-US]dd-mmm-yyyy;@")
+                End If
+               
+               
+               'Basic ADD
+                 'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],30,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 132).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 132)) Then Cells(x, 132) = Trim(Cells(x, 5))
+                End If
+                 
+                
+                'Group Number
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],32,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 134).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 134)) Then Cells(x, 134) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],33,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 136).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 136)) Then
+                        Cells(x, 136) = Trim(Cells(x, 5))
+                        Cells(x, 135).Interior.ColorIndex = 44
+                    End If
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],37,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 133).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Cells(x, 133) Then Cells(x, 133) = Format(Cells(x, 5), "[$-en-US]dd-mmm-yyyy;@")
+                End If
+                
+
+'
+            
+            
+            'LTD ABIL - These are the same fields that would update LTD BAS
+            '****** Need an if Statement for this one to populate these fields if LTD ABIL is selected
+
+                Blah = WorksheetFunction.Sum(Range("CC2", "CE" & LastrowCC))
+                    If Blah > 0 Then
+                        LTDABILvar = True
+                    End If
+                
+
+                If LTDABILvar = True Then
+                'Effective Date
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],38,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 79).NumberFormat
+                    
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 79)) Then Cells(x, 79) = Trim(Cells(x, 5))
+                    End If
+                    
+                    'Exp Group
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],41,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 81).NumberFormat
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 81)) Then Cells(x, 81) = Trim(Cells(x, 5))
+                    End If
+                
+                    'Class
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],42,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 83).NumberFormat
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 83)) Then Cells(x, 83) = Trim(Cells(x, 5))
+                        Cells(x, 82).Interior.ColorIndex = 44
+                    End If
+                    
+                    'Term Date
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],43,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 80).NumberFormat
+                    
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 80)) Then Cells(x, 80) = Trim(Cells(x, 5))
+                    End If
+                
+                'LTD BAS - These are the same fields that would update LTD ABIL    'LTD
+                ElseIf LTDBASvar = True Then
+                    'Effective Date
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],38,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 105).NumberFormat
+                    
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 105)) Then Cells(x, 105) = Trim(Cells(x, 5))
+                    End If
+                    
+                    'Exp Group
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],41,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 107).NumberFormat
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 107)) Then Cells(x, 107) = Trim(Cells(x, 5))
+                    End If
+                
+                    'Class
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],42,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 109).NumberFormat
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 109)) Then Cells(x, 109) = Trim(Cells(x, 5))
+                        Cells(x, 108).Interior.ColorIndex = 44
+                    End If
+                    
+                    'Term Date
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],43,FALSE),"""")"
+                    Cells(x, 5) = Cells(x, 5).Value
+                    Cells(x, 5).NumberFormat = Cells(x, 106).NumberFormat
+                    
+                    If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                        If Trim(Cells(x, 5)) <> Trim(Cells(x, 106)) Then Cells(x, 106) = Trim(Cells(x, 5))
+                    End If
+                End If
+            'LTD BYUP
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],44,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 92).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 92)) Then Cells(x, 92) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],47,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 94).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 94)) Then Cells(x, 94) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],48,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 96).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 96)) Then Cells(x, 96) = Trim(Cells(x, 5))
+                    Cells(x, 95).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],49,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 93).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 93)) Then Cells(x, 93) = Trim(Cells(x, 5))
+                End If
+                
+            'STD WD/Core
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],50,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 36).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 36)) Then Cells(x, 36) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],53,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 38).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 38)) Then Cells(x, 38) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],54,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 40).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 40)) Then Cells(x, 40) = Trim(Cells(x, 5))
+                    Cells(x, 39).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],55,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 37).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 37)) Then Cells(x, 37) = Trim(Cells(x, 5))
+                End If
+                
+            'STD WD BYP
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],56,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 49).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 49)) Then Cells(x, 49) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],59,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 51).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 51)) Then Cells(x, 51) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],60,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 53).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 53)) Then Cells(x, 53) = Trim(Cells(x, 5))
+                    Cells(x, 52).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],61,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 50).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 50)) Then Cells(x, 50) = Trim(Cells(x, 5))
+                End If
+                
+            'DisFlex WD FLEX
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],62,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 62).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 62)) Then Cells(x, 62) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],65,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 64).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 64)) Then Cells(x, 64) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],66,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 66).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 66)) Then Cells(x, 66) = Trim(Cells(x, 5))
+                    Cells(x, 65).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],69,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 63).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 63)) Then Cells(x, 63) = Trim(Cells(x, 5))
+                End If
+                
+                ''Placeholder for Benefit Commencement
+'                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],68,FALSE),"""")"
+'                Cells(x, 5) = Cells(x, 5).Value
+'                Cells(x, 5).NumberFormat = Cells(x, 105).NumberFormat
+'                'If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0  Then
+'                '    If Trim(Cells(x, 5)) <> Cells(x, 63) Then Cells(x, 63) = Cells(x, 5)
+'                'End If
+                
+                'Benefit Amount
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],69,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 72).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 72)) Then Cells(x, 72) = Trim(Cells(x, 5))
+                End If
+                
+
+               'Supplemental Life
+                 'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],71,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 146).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 146)) Then Cells(x, 146) = Trim(Cells(x, 5))
+                End If
+                
+                'Group Number
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],73,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 148).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 148)) Then Cells(x, 148) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],74,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 105).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Cells(x, 150) Then Cells(x, 150) = Cells(x, 5)
+                    Cells(x, 149).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],78,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 147).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 147)) Then Cells(x, 147) = Trim(Cells(x, 5))
+                End If
+                
+                'EE Benefit
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],75,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 154).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 154)) Then Cells(x, 154) = Trim(Cells(x, 5))
+                End If
+                
+'
+               'Supplemental ADD
+                 'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],78,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 176).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 176)) Then Cells(x, 176) = Trim(Cells(x, 5))
+                End If
+                
+                'Group Number
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],80,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 178).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 178)) Then Cells(x, 178) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],81,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 180).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 180)) Then Cells(x, 180) = Trim(Cells(x, 5))
+                    Cells(x, 179).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],85,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 177).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 177)) Then Cells(x, 177) = Trim(Cells(x, 5))
+                End If
+                
+                'EE Benefit
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],82,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 184).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 184)) Then Cells(x, 184) = Trim(Cells(x, 5))
+                End If
+                
+
+                
+            'Critical Illness
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],82,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 269).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 269)) Then Cells(x, 270) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],85,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 272).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 272)) Then Cells(x, 272) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],86,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 274).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 274)) Then Cells(x, 274) = Trim(Cells(x, 5))
+                    Cells(x, 273).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],88,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 271).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 271)) Then Cells(x, 271) = Trim(Cells(x, 5))
+                End If
+                
+                'Benefit Amount
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],86,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 277).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 277)) Then Cells(x, 277) = Trim(Cells(x, 5))
+                End If
+                
+                'Tier
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],87,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 278).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 278)) Then Cells(x, 278) = Trim(Cells(x, 5))
+                End If
+                
+            'Accident
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],94,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 294).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 294)) Then Cells(x, 294) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],96,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 296).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 296)) Then Cells(x, 296) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],97,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 298).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 298)) Then Cells(x, 298) = Trim(Cells(x, 5))
+                    Cells(x, 297).Interior.ColorIndex = 44
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],100,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 295).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 295)) Then Cells(x, 295) = Trim(Cells(x, 5))
+                End If
+                
+
+                
+                'Tier
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],99,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 301).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 301)) Then Cells(x, 301) = Trim(Cells(x, 5))
+                End If
+                
+                'PLAN
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],97,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 302).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 302)) Then Cells(x, 302) = Trim(Cells(x, 5))
+                End If
+                
+            'Hospital Indemnity
+                    
+                'Effective Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],100,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 303).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 303)) Then Cells(x, 303) = Trim(Cells(x, 5))
+                End If
+                
+                'Group
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],100,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 305).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 305)) Then Cells(x, 305) = Trim(Cells(x, 5))
+                End If
+            
+                'Class
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],103,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 307).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 307)) Then Cells(x, 307) = Trim(Cells(x, 5))
+                    Cells(x, 306).Interior.ColorIndex = 44
+                End If
+                
+                'Tier
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],105,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 310).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 310)) Then Cells(x, 310) = Trim(Cells(x, 5))
+                End If
+                
+                'PLAN
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],104,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 311).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 311)) Then Cells(x, 311) = Trim(Cells(x, 5))
+                End If
+                
+                'Term Date
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],107,FALSE),"""")"
+                Cells(x, 5).NumberFormat = Cells(x, 304).NumberFormat
+                
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 304)) Then Cells(x, 304) = Trim(Cells(x, 5))
+                End If
+            
+            
+            
+    ElseIf Cells(x, 1) = "D" Then
+    'Dependent Demo
+    
+'                'First Name Check
+                'iferror(VLOOKUP to pull First Name from List Bill Changes
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],7,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                'compare cell from change census to cell from list bill changes and update change census if different
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 8)) Then Cells(x, 8) = Trim(Cells(x, 5))
+                End If
+                'Last Name Check
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],8,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 7)) Then Cells(x, 7) = Trim(Cells(x, 5))
+                End If
+                'MI is not on the file
+                'DOB Check
+                Cells(x, 5).NumberFormat = Cells(x, 11).NumberFormat
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],9,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 11).NumberFormat
+
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 11)) Then Cells(x, 11) = Trim(Cells(x, 5))
+                End If
+                'Marital Status
+                'Gender
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],10,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 13)) Then Cells(x, 13) = UCase(Left(Cells(x, 5), 1))
+
+                End If
+
+
+                'Smoker Status Check
+                Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],16,FALSE),"""")"
+                Cells(x, 5) = Cells(x, 5).Value
+                Cells(x, 5).NumberFormat = Cells(x, 14).NumberFormat
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                    If Trim(Cells(x, 5)) <> Trim(Cells(x, 14)) Then
+                        Cells(x, 14) = Cells(x, 5)
+                        Cells(x, 15) = "=iferror(VLOOKUP(RC[-13],'List Bill Changes'!C[-14]:C[-12],3,FALSE),"""")"
+                        Cells(x, 15) = Cells(x, 15).Value
+                    End If
+                End If
+
+'               'Term Check For Dependents
+                Cells(x, 5) = Format("=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],17,FALSE),"""")", "[$-en-US]dd-mmm-yyyy;@")
+                Cells(x, 5).NumberFormat = Cells(x, 23).NumberFormat
+
+                If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+
+                    If Cells(x, 6) = "S" Then
+
+                        'Life bdep SPS
+                        If Cells(x, 192) <> "" Then Cells(x, 193) = Cells(x, 5)
+                        'Life SDEP SPS
+                        If Cells(x, 207) <> "" Then Cells(x, 208) = Cells(x, 5)
+                        'Life SDEP SPS ADD
+                        If Cells(x, 252) <> "" Then Cells(x, 253) = Cells(x, 5)
+                    ElseIf Cells(x, 6) = "C" Then
+
+                        'Life BDEP CHLD
+                        If Cells(x, 222) <> "" Then Cells(x, 223) = Cells(x, 5)
+                        'Life SDEP CHLD
+                        If Cells(x, 237) <> "" Then Cells(x, 238) = Cells(x, 5)
+                        'Life SDEP CHLD ADD
+                        If Cells(x, 261) <> "" Then Cells(x, 262) = Cells(x, 5)
+                    End If
+
+                    'CI
+                    If Cells(x, 270) <> "" Then Cells(x, 271) = Cells(x, 23)
+                    'ACC
+                    If Cells(x, 294) <> "" Then Cells(x, 295) = Cells(x, 23)
+                    'HI
+                    If Cells(x, 303) <> "" Then Cells(x, 304) = Cells(x, 23)
+
+                End If
+'
+'            'Basic Life
+
+'            'SP Benefit
+                If Cells(x, 6) = "S" Then
+                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],27,FALSE),"""")"
+                    If Cells(x, 5).Value > 0 Or Cells(x, 5).Value <> "" Then
+                        'Effective Date
+                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],22,FALSE),"""")"
+                        Cells(x, 5) = Cells(x, 5).Value
+                        Cells(x, 5).NumberFormat = Cells(x, 192).NumberFormat
+
+                            If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+                                If Trim(Cells(x, 5)) <> Cells(x, 192) Then Cells(x, 192) = Trim(Cells(x, 5).Value)
+
+                            End If
+
+'                        'Group
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],24,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 194).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 194)) Then Cells(x, 194) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Class
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],25,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 196).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 196)) Then Cells(x, 196) = Trim(Cells(x, 5))
+'                            Cells(x, 195).Interior.ColorIndex = 44
+'                        End If
+'
+'                        'Benefit Amount
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],27,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 199).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 199)) Then Cells(x, 199) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Term Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],29,FALSE),"""")"
+'                        Cells(x, 5).NumberFormat = Cells(x, 193).NumberFormat
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 193)) Then Cells(x, 193) = Trim(Cells(x, 5))
+'                        End If
+                    
+                End If
+
+'
+'                'Supp Spouse Life
+'                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],75,FALSE),"""")"
+'                    If Cells(x, 5).Value > 0 Or Cells(x, 5).Value <> "" Then
+'                        'Effective Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],70,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 207).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'
+'                            If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                                If Trim(Cells(x, 5)) <> Cells(x, 207) Then Cells(x, 207) = Trim(Cells(x, 5).Value)
+'
+'                            End If
+'
+'                        'Group
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],72,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 209).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 209)) Then Cells(x, 209) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Class
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],73,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 211).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 211)) Then Cells(x, 211) = Trim(Cells(x, 5))
+'                            Cells(x, 135).Interior.ColorIndex = 44
+'                        End If
+'
+'                        'Benefit Amount
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],75,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 214).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 214)) Then Cells(x, 214) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Term Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],77,FALSE),"""")"
+'                        Cells(x, 5).NumberFormat = Cells(x, 208).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 208)) Then Cells(x, 208) = Trim(Cells(x, 5))
+'                        End If
+'                    End If
+'
+'
+'                    'Spouse  ADD
+'                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],83,FALSE),"""")"
+'                    If Cells(x, 5).Value > 0 Or Cells(x, 5).Value <> "" Then
+'                        'Effective Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],78,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 252).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'
+'                            If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                                If Trim(Cells(x, 5)) <> Cells(x, 252) Then Cells(x, 252) = Trim(Cells(x, 5).Value)
+'
+'                            End If
+'
+'                        'Group
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],80,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 254).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 254)) Then Cells(x, 254) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Class
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],81,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 256).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 256)) Then Cells(x, 256) = Trim(Cells(x, 5))
+'                            Cells(x, 135).Interior.ColorIndex = 44
+'                        End If
+'
+'                        'Benefit Amount
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],83,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 259).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 259)) Then Cells(x, 259) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Term Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],77,FALSE),"""")"
+'                        Cells(x, 5).NumberFormat = Cells(x, 253).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 253)) Then Cells(x, 253) = Trim(Cells(x, 5))
+'                        End If
+'                    End If
+'
+'
+'
+'
+''            'Basic Life
+'
+''            'CH Benefit
+'                ElseIf Cells(x, 6) = "C" Then
+'                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],28,FALSE),"""")"
+'                    If Cells(x, 5).Value > 0 Or Cells(x, 5).Value <> "" Then
+'                            'Effective Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],22,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 222).NumberFormat
+'
+'                            If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                                If Trim(Cells(x, 5)) <> Cells(x, 222) Then Cells(x, 222) = Trim(Cells(x, 5).Value)
+'
+'                            End If
+'
+'                        'Group
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],24,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 224).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 224)) Then Cells(x, 224) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Class
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],25,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 226).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 226)) Then Cells(x, 226) = Trim(Cells(x, 5))
+'                            Cells(x, 195).Interior.ColorIndex = 44
+'                        End If
+'
+'                        'Benefit Amount
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],28,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 229).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 229)) Then Cells(x, 229) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Term Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],29,FALSE),"""")"
+'                        Cells(x, 5).NumberFormat = Cells(x, 223).NumberFormat
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 223)) Then Cells(x, 223) = Trim(Cells(x, 5))
+'                        End If
+'                    End If
+'
+'
+'                'Supp CH Life
+'                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],76,FALSE),"""")"
+'                    If Cells(x, 5).Value > 0 Or Cells(x, 5).Value <> "" Then
+'                        'Effective Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],70,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 237).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'
+'                            If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                                If Trim(Cells(x, 5)) <> Cells(x, 237) Then Cells(x, 237) = Trim(Cells(x, 5).Value)
+'
+'                            End If
+'
+'                        'Group
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],72,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 239).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 239)) Then Cells(x, 239) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Class
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],73,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 241).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 241)) Then Cells(x, 241) = Trim(Cells(x, 5))
+'                            Cells(x, 135).Interior.ColorIndex = 44
+'                        End If
+'
+'                        'Benefit Amount
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],76,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 244).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 244)) Then Cells(x, 244) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Term Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],77,FALSE),"""")"
+'                        Cells(x, 5).NumberFormat = Cells(x, 238).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 238)) Then Cells(x, 238) = Trim(Cells(x, 5))
+'                        End If
+'                    End If
+'
+'
+'                    'CH  ADD
+'                    Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],84,FALSE),"""")"
+'                    If Cells(x, 5).Value > 0 Or Cells(x, 5).Value <> "" Then
+'                        'Effective Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],78,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 261).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'
+'                            If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                                If Trim(Cells(x, 5)) <> Cells(x, 261) Then Cells(x, 261) = Trim(Cells(x, 5).Value)
+'
+'                            End If
+'
+'                        'Group
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],80,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 263).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 263)) Then Cells(x, 263) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Class
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],81,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 265).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 265)) Then Cells(x, 265) = Trim(Cells(x, 5))
+'                            Cells(x, 135).Interior.ColorIndex = 44
+'                        End If
+'
+'                        'Benefit Amount
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],84,FALSE),"""")"
+'                        Cells(x, 5) = Cells(x, 5).Value
+'                        Cells(x, 5).NumberFormat = Cells(x, 268).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 268)) Then Cells(x, 268) = Trim(Cells(x, 5))
+'                        End If
+'
+'                        'Term Date
+'                        Cells(x, 5) = "=iferror(VLOOKUP(RC[-3],'List Bill Changes'!C[-4]:C[102],85,FALSE),"""")"
+'                        Cells(x, 5).NumberFormat = Cells(x, 262).NumberFormat
+'                        If Cells(x, 5) = 0 Then Cells(x, 5) = ""
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                        If Trim(Cells(x, 5)) <> "" And Cells(x, 5) <> 0 Then
+'                            If Trim(Cells(x, 5)) <> Trim(Cells(x, 262)) Then Cells(x, 262) = Trim(Cells(x, 5))
+'                        End If
+'                    End If
+'                End If
+        End If
+    End If
+
+Next x
